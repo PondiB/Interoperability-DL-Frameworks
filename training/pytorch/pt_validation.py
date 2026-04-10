@@ -1,17 +1,56 @@
+import argparse
+import csv
 import os
 import time
-import csv
+from pathlib import Path
+
 import numpy as np
 import torch
 import h5py
 from PIL import Image
+
 from Palma_model import MultiLayerConvLSTM
 
-# ==== Configuration ====
-MODEL_PATH = "/path/to/model.pth"
-VALIDATION_PATH = "/path/to/validation_data"
-SAVE_CSV_PATH = "/path/to/validation_summary.csv"
-RESIZE_TO = (315, 344)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_MODEL_PATH = REPO_ROOT / "models" / "pytorch" / "model_pytorch.pth"
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Validate native PyTorch ConvLSTM (task RMSE/MAE).")
+    p.add_argument(
+        "--model",
+        type=Path,
+        default=DEFAULT_MODEL_PATH,
+        help="Path to model_pytorch.pth (default: models/pytorch/model_pytorch.pth)",
+    )
+    p.add_argument(
+        "--validation-dir",
+        type=Path,
+        required=True,
+        help="Directory of validation batch folders (see create_dataset_from_raw).",
+    )
+    p.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("validation_summary.csv"),
+        help="Where to write per-sample metrics.",
+    )
+    p.add_argument(
+        "--resize",
+        type=int,
+        nargs=2,
+        default=[315, 344],
+        metavar=("W", "H"),
+        help="PIL resize (width, height); default matches STAC metadata 344x315 HxW stack.",
+    )
+    return p.parse_args()
+
+
+args = parse_args()
+MODEL_PATH = args.model
+VALIDATION_PATH = args.validation_dir
+SAVE_CSV_PATH = args.output_csv
+RESIZE_TO = tuple(args.resize)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", DEVICE)
 

@@ -1,17 +1,58 @@
-import os
+import argparse
 import csv
+import os
+from pathlib import Path
+
 import numpy as np
-import keras
 from PIL import Image
 import h5py
 
-# ==== Paths ====
-MODEL_PATH = "/path/to/model.keras"
-VALIDATION_PATH = "/path/to/validation_data"
-SAVE_CSV_PATH = "/path/to/error_by_timestep.csv"
-RESIZE_TO = (315, 344)
+os.environ.setdefault("KERAS_BACKEND", "torch")
+
+import keras
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_MODEL = REPO_ROOT / "models" / "keras_pt" / "model_keras3_pt.keras"
+
+
+def parse_args():
+    p = argparse.ArgumentParser(description="Per-timestep task RMSE/MAE (Keras PT).")
+    p.add_argument(
+        "--model",
+        type=Path,
+        default=DEFAULT_MODEL,
+        help="Path to model_keras3_pt.keras",
+    )
+    p.add_argument(
+        "--validation-dir",
+        type=Path,
+        required=True,
+        help="Directory of validation batch folders.",
+    )
+    p.add_argument(
+        "--output-csv",
+        type=Path,
+        default=Path("error_by_timestep.csv"),
+        help="Output CSV path.",
+    )
+    p.add_argument(
+        "--resize",
+        type=int,
+        nargs=2,
+        default=[315, 344],
+        metavar=("W", "H"),
+    )
+    return p.parse_args()
+
+
+args = parse_args()
+MODEL_PATH = args.model
+VALIDATION_PATH = args.validation_dir
+SAVE_CSV_PATH = args.output_csv
+RESIZE_TO = tuple(args.resize)
 
 # ==== Load model ====
+print("Keras backend:", keras.backend.backend())
 print("Loading model...")
 model = keras.models.load_model(MODEL_PATH)
 print("Model loaded.")
@@ -24,7 +65,11 @@ def load_validation_data(directory_path, resize_to):
         folder_path = os.path.join(directory_path, folder)
         if not os.path.isdir(folder_path):
             continue
-        files = sorted([f for f in os.listdir(folder_path) if f.endswith(".hf5")])[:36]
+        files = sorted(
+            f
+            for f in os.listdir(folder_path)
+            if f.lower().endswith((".hf5", ".h5", ".hdf5"))
+        )[:36]
         if len(files) < 36:
             continue
         sequence = np.zeros((36, resize_height, resize_width), dtype=np.float32)
@@ -57,7 +102,7 @@ for t in range(18):
     mae_list.append(mae)
 
 # ==== Save CSV ====
-os.makedirs(os.path.dirname(SAVE_CSV_PATH) or ".", exist_ok=True)
+SAVE_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
 with open(SAVE_CSV_PATH, "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["timestep", "RMSE", "MAE"])

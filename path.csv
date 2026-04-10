@@ -1,0 +1,2 @@
+n_samples,n_elements,RMSE_port,MAE_port,keras_model,onnx_model
+2,3900960,2.8110453520738345e-07,2.138360101441002e-07,/Users/brianpondi/ml-dev/Interoperability-DL-Frameworks/models/keras_pt/model_keras3_pt.keras,/Users/brianpondi/ml-dev/Interoperability-DL-Frameworks/models/keras_pt/model_keras3_pt.onnx

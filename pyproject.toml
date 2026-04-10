@@ -1,0 +1,19 @@
+[project]
+name = "interoperability-dl-frameworks"
+version = "0.1.0"
+description = "ConvLSTM EO interoperability experiments (PyTorch / Keras / ONNX)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.5",
+    "numpy>=1.24",
+    "h5py>=3.10",
+    "pillow>=10",
+    "pandas>=2.0",
+    "onnx>=1.16",
+    "onnxruntime>=1.19",
+    "keras>=3.0",
+]
+
+[tool.uv]
+package = false
